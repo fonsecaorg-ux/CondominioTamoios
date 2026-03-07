@@ -27,11 +27,12 @@ python app.py
 | Casa 5 | 5 | casa5 | Morador |
 | Casa 6 | 6 | casa6 | Morador |
 | Casa 7 | 7 | casa7 | Morador |
-| **Casa 8** | **8** | **tamoios8** | **ADMIN (Ivonete)** |
+| **Casa 8** | **8** | **tamoios8** | **Ivonete — pode adicionar dados e uploads** |
 | Casa 9 | 9 | casa9 | Morador |
 | Casa 10 | 10 | casa10 | Morador |
+| **Admin geral** | **admin** | **tamoios@dev** | **Administração do aplicativo** |
 
-⚠️ **Oriente todos os moradores a trocar a senha no primeiro acesso.**
+⚠️ **Oriente todos os moradores a trocar a senha no primeiro acesso.** Qualquer usuário pode alterar a própria senha pelo menu **Senha** (ícone de chave) após o login.
 
 ---
 
@@ -47,9 +48,19 @@ python app.py
 
 ---
 
+## 📱 Mobile: atalho na tela (PWA)
+
+No celular, abra o site no navegador (Chrome/Safari), use **“Adicionar à tela inicial”** / **“Add to Home Screen”**. O app aparecerá como atalho com o nome **Tamoios** e o ícone do condomínio. Ideal para uso no dia a dia.
+
+## 🎨 Tema claro / escuro
+
+O app tem um botão no topo (ícone de sol/lua) para alternar entre **tema escuro** (padrão) e **tema claro**. A escolha é salva no celular e mantida nas próximas visitas.
+
 ## 📱 Funcionalidades
 
-### Ivonete (Admin — Casa 8)
+### Ivonete (Casa 8) e Admin geral
+- A **única moradora** que pode adicionar dados e fazer uploads é a da **Casa 8 (Ivonete)**.
+- O **admin geral** (login: casa **admin**, senha padrão **tamoios@dev**) tem acesso total ao aplicativo.
 - Lançar despesas (Luz, Água, Limpeza, Outros)
 - Anexar foto/PDF do comprovante
 - Marcar/desmarcar pagamentos por casa

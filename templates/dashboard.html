@@ -78,7 +78,8 @@
           </tr>
         </thead>
         <tbody>
-          {% for m, dados in dados_mes.items()|sort %}
+          {% for m in meses_ordem %}
+          {% set dados = dados_mes[m] %}
           <tr>
             <td style="font-weight:700;">{{ meses[m-1][:3] }}</td>
             <td style="text-align:right;color:#f59e0b;">{% if dados.Luz > 0 %}{{ "%.2f"|format(dados.Luz)|replace('.',',') }}{% else %}—{% endif %}</td>

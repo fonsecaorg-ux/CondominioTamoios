@@ -2,14 +2,21 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1e40af" id="meta-theme-color">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tamoios">
   <title>{% block title %}Condomínio Tamoios{% endblock %}</title>
+  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('icon_png', size=192) }}">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
+    /* Tema escuro (padrão) */
+    :root, [data-theme="dark"] {
       --primary:   #1e40af;
       --primary-l: #3b82f6;
       --accent:    #0ea5e9;
@@ -25,6 +32,27 @@
       --border:    #334155;
       --radius:    12px;
     }
+
+    /* Tema claro */
+    [data-theme="light"] {
+      --primary:   #1d4ed8;
+      --primary-l: #2563eb;
+      --accent:    #0284c7;
+      --green:     #059669;
+      --red:       #dc2626;
+      --yellow:    #d97706;
+      --purple:    #7c3aed;
+      --bg:        #f8fafc;
+      --bg2:       #f1f5f9;
+      --bg3:       #e2e8f0;
+      --text:      #0f172a;
+      --text2:     #475569;
+      --border:    #cbd5e1;
+    }
+
+    [data-theme="light"] .header { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+    [data-theme="light"] .casa-item.pago { background: rgba(5,150,105,.12); border-color: var(--green); color: var(--green); }
+    [data-theme="light"] .casa-item.pendente { background: rgba(220,38,38,.08); border-color: #ef444450; color: var(--red); }
 
     body {
       font-family: 'Nunito', sans-serif;
@@ -73,6 +101,24 @@
       cursor: pointer;
       font-size: 13px;
     }
+    .btn-theme {
+      background: rgba(255,255,255,.2);
+      border: none;
+      color: #fff;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .btn-theme:hover { background: rgba(255,255,255,.3); }
+    .btn-theme .fa-sun { display: none; }
+    .btn-theme .fa-moon { display: inline; }
+    [data-theme="light"] .btn-theme .fa-sun { display: inline; }
+    [data-theme="light"] .btn-theme .fa-moon { display: none; }
 
     /* ─── NAV BOTTOM ─── */
     .nav-bottom {
@@ -263,15 +309,18 @@
       <small>Gestão de Despesas</small>
     </div>
   </div>
-  {% if session.casa %}
   <div class="header-right">
+    <button type="button" class="btn-theme" id="theme-toggle" title="Alternar tema claro/escuro" aria-label="Tema">
+      <i class="fas fa-sun"></i><i class="fas fa-moon"></i>
+    </button>
+    {% if session.casa %}
     <div>
     <div class="badge-casa">{% if session.casa == 'admin' %}Administração{% else %}Casa {{ session.casa }}{% endif %}</div>
-      {% if session.is_admin and session.casa != 'admin' %}<div class="badge-admin" style="text-align:center;margin-top:3px;">ADMIN</div>{% endif %}
+      {% if session.casa == 'admin' %}<div class="badge-admin" style="text-align:center;margin-top:3px;">Admin geral</div>{% elif session.is_admin %}<div class="badge-admin" style="text-align:center;margin-top:3px;">ADMIN</div>{% endif %}
     </div>
     <a href="{{ url_for('logout') }}" class="btn-logout" title="Sair"><i class="fas fa-sign-out-alt"></i></a>
+    {% endif %}
   </div>
-  {% endif %}
 </header>
 
 {% with msgs = get_flashed_messages(with_categories=true) %}
@@ -297,5 +346,23 @@
 {% endif %}
 
 {% block extra_scripts %}{% endblock %}
+<script>
+(function() {
+  var KEY = 'tamoios-theme';
+  var root = document.documentElement;
+  var meta = document.getElementById('meta-theme-color');
+  var theme = localStorage.getItem(KEY) || 'dark';
+  function apply(t) {
+    root.setAttribute('data-theme', t);
+    if (meta) meta.content = t === 'light' ? '#1d4ed8' : '#1e40af';
+  }
+  apply(theme);
+  document.getElementById('theme-toggle').addEventListener('click', function() {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, theme);
+    apply(theme);
+  });
+})();
+</script>
 </body>
 </html>

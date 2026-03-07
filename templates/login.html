@@ -2,8 +2,14 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1e40af" id="meta-theme-color">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tamoios">
   <title>Login — Condomínio Tamoios</title>
+  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('icon_png', size=192) }}">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -17,6 +23,10 @@
       justify-content: center;
       padding: 24px;
       color: #f1f5f9;
+    }
+    [data-theme="light"] body {
+      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 60%, #f8fafc 100%);
+      color: #0f172a;
     }
     .login-box {
       width: 100%;
@@ -38,6 +48,26 @@
       border-radius: 16px;
       padding: 28px 24px;
     }
+    [data-theme="light"] .card {
+      background: #fff;
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] .form-label { color: #475569; }
+    [data-theme="light"] .form-control { background: #f1f5f9; border-color: #cbd5e1; color: #0f172a; }
+    [data-theme="light"] .login-sub { color: #64748b; }
+    [data-theme="light"] .hint { color: #64748b; }
+    .btn-theme {
+      position: fixed; top: 12px; right: 12px; z-index: 10;
+      width: 44px; height: 44px; border-radius: 12px;
+      background: rgba(30,64,175,.9); color: #fff; border: none;
+      display: inline-flex; align-items: center; justify-content: center; font-size: 18px;
+      cursor: pointer; box-shadow: 0 2px 12px rgba(0,0,0,.3);
+    }
+    [data-theme="light"] .btn-theme { background: rgba(37,99,235,.9); }
+    .btn-theme .fa-sun { display: none; }
+    .btn-theme .fa-moon { display: inline; }
+    [data-theme="light"] .btn-theme .fa-sun { display: inline; }
+    [data-theme="light"] .btn-theme .fa-moon { display: none; }
     .form-group { margin-bottom: 16px; }
     .form-label { font-size: 12px; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 6px; }
     .input-wrap { position: relative; }
@@ -99,6 +129,9 @@
   </style>
 </head>
 <body>
+<button type="button" class="btn-theme" id="theme-toggle" title="Alternar tema claro/escuro" aria-label="Tema">
+  <i class="fas fa-sun"></i><i class="fas fa-moon"></i>
+</button>
 <div class="login-box">
   <div class="login-header">
     <span class="login-icon">🏘️</span>
@@ -138,5 +171,23 @@
 
   <p class="hint">Dificuldades? Fale com a administradora — Casa 8</p>
 </div>
+<script>
+(function() {
+  var KEY = 'tamoios-theme';
+  var root = document.documentElement;
+  var meta = document.getElementById('meta-theme-color');
+  var theme = localStorage.getItem(KEY) || 'dark';
+  function apply(t) {
+    root.setAttribute('data-theme', t);
+    if (meta) meta.content = t === 'light' ? '#1d4ed8' : '#1e40af';
+  }
+  apply(theme);
+  document.getElementById('theme-toggle').addEventListener('click', function() {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(KEY, theme);
+    apply(theme);
+  });
+})();
+</script>
 </body>
 </html>

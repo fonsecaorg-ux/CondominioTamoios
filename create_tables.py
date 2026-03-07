@@ -23,6 +23,15 @@ def init_postgress():
             descricao TEXT NOT NULL, categoria TEXT NOT NULL,
             valor NUMERIC NOT NULL, comprovante TEXT
         );
+        CREATE TABLE IF NOT EXISTS pagamentos (
+            id SERIAL PRIMARY KEY,
+            casa TEXT NOT NULL,
+            mes INTEGER NOT NULL,
+            ano INTEGER NOT NULL,
+            pago INTEGER DEFAULT 0,
+            data_pag TEXT,
+            UNIQUE(casa, mes, ano)
+        );
     ''')
     conn.commit()
     cur.close()
