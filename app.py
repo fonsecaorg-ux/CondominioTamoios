@@ -90,6 +90,40 @@ def index():
     return render_template('index.html', despesas=despesas, total=total, cota=cota, 
                            mes=mes, ano=ano, meses=MESES, casas_pagas=casas_pagas, usuarios=usuarios)
 
+# Função para criar tabelas automaticamente no deploy (Ignora erro se já existir)
+def auto_init_db():
+    if DATABASE_URL:
+        try:
+            conn, cur = get_db()
+            cur.execute('''
+                CREATE TABLE IF NOT EXISTS usuarios (
+                    id SERIAL PRIMARY KEY,
+                    casa TEXT UNIQUE NOT NULL,
+                    nome TEXT NOT NULL,
+                    senha_hash TEXT NOT NULL,
+                    is_admin INTEGER DEFAULT 0,
+                    ativo INTEGER DEFAULT 1
+                );
+                CREATE TABLE IF NOT EXISTS despesas (
+                    id SERIAL PRIMARY KEY,
+                    mes INTEGER NOT NULL, ano INTEGER NOT NULL,
+                    descricao TEXT NOT NULL, categoria TEXT NOT NULL,
+                    valor NUMERIC NOT NULL, comprovante TEXT
+                );
+            ''')
+            # Garante que pelo menos o Admin exista para você entrar
+            admin_senha = hash_senha('tamoios8')
+            cur.execute("INSERT INTO usuarios (casa, nome, senha_hash, is_admin) VALUES (%s, %s, %s, %s) ON CONFLICT (casa) DO NOTHING", 
+                        ('Casa 08', 'Ivonete - Casa 08', admin_senha, 1))
+            conn.commit()
+            conn.close()
+            print("✅ Banco sincronizado via Auto-Init!")
+        except Exception as e:
+            print(f"❌ Erro no Auto-Init: {e}")
+
+# Chama a função ao carregar o app
+auto_init_db()
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
