@@ -17,13 +17,12 @@ MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
          'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 CATEGORIAS = ['Luz', 'Água', 'Limpeza', 'Outros']
 
+# 1. FUNÇÕES DE BANCO E UTILITÁRIOS
 def get_db():
     if DATABASE_URL:
-        # Conexão Render (PostgreSQL)
         conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         return conn, conn.cursor(cursor_factory=DictCursor)
     else:
-        # Conexão Local (SQLite)
         import sqlite3
         conn = sqlite3.connect('tamoios.db')
         conn.row_factory = sqlite3.Row
@@ -32,8 +31,27 @@ def get_db():
 def hash_senha(senha):
     return hashlib.sha256(senha.encode()).hexdigest()
 
-# ... (Seus decorators login_required e admin_required permanecem iguais) ...
+# 2. DECORADORES (PRECISAM ESTAR AQUI NO TOPO)
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'casa' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated
 
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'casa' not in session:
+            return redirect(url_for('login'))
+        if not session.get('is_admin'):
+            flash('Acesso restrito à administradora.', 'error')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated
+
+# 3. ROTAS DO APLICATIVO
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'casa' in session: return redirect(url_for('index'))
@@ -41,12 +59,12 @@ def login():
         casa = request.form.get('casa', '').strip()
         senha = request.form.get('senha', '').strip()
         conn, db = get_db()
-        # Mudança de ? para %s para compatibilidade Postgres
         db.execute('SELECT * FROM usuarios WHERE casa = %s', (casa,))
         user = db.fetchone()
         conn.close()
         if user and user['senha_hash'] == hash_senha(senha) and user['ativo']:
-            session['casa'] = user['casa']; session['is_admin'] = bool(user['is_admin'])
+            session['casa'] = user['casa']
+            session['is_admin'] = bool(user['is_admin'])
             session['nome'] = user['nome']
             return redirect(url_for('index'))
         flash('Casa ou senha incorretos.', 'error')
@@ -72,4 +90,6 @@ def index():
     return render_template('index.html', despesas=despesas, total=total, cota=cota, 
                            mes=mes, ano=ano, meses=MESES, casas_pagas=casas_pagas, usuarios=usuarios)
 
-# NOTA: Todas as outras rotas (add_despesa, delete, toggle) devem trocar '?' por '%s'
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
