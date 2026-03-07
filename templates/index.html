@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}Resumo — Condomínio Tamoios{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Seletor Mês/Ano -->
+  <form method="GET" action="{{ url_for('index') }}" style="display:flex;gap:8px;margin-bottom:16px;margin-top:12px;">
+    <select name="mes" class="form-control" onchange="this.form.submit()" style="flex:1;">
+      {% for i in range(1, 13) %}
+        <option value="{{ i }}" {% if i == mes %}selected{% endif %}>{{ meses[i-1] }}</option>
+      {% endfor %}
+    </select>
+    <select name="ano" class="form-control" onchange="this.form.submit()" style="width:90px;">
+      {% for a in anos %}
+        <option value="{{ a }}" {% if a == ano %}selected{% endif %}>{{ a }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <!-- Cards totais -->
+  <div class="grid-2" style="margin-bottom:12px;">
+    <div class="stat-card">
+      <div class="stat-label">Total Despesas</div>
+      <div class="stat-value" style="color:#f87171;">R$ {{ "%.2f"|format(total)|replace('.',',') }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cota por Casa</div>
+      <div class="stat-value" style="color:#34d399;">R$ {{ "%.2f"|format(cota)|replace('.',',') }}</div>
+    </div>
+  </div>
+
+  <!-- Lançar Despesa (admin) -->
+  {% if session.is_admin %}
+  <div class="card">
+    <div class="card-title"><i class="fas fa-plus-circle"></i> Lançar Despesa</div>
+    <form method="POST" action="{{ url_for('add_despesa') }}" enctype="multipart/form-data">
+      <input type="hidden" name="mes" value="{{ mes }}">
+      <input type="hidden" name="ano" value="{{ ano }}">
+      <div class="form-group">
+        <label class="form-label">DESCRIÇÃO</label>
+        <input type="text" name="descricao" class="form-control" placeholder="Ex: Conta de água fev/2026" required>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">CATEGORIA</label>
+          <select name="categoria" class="form-control">
+            {% for c in categorias %}
+              <option value="{{ c }}">{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">VALOR (R$)</label>
+          <input type="text" name="valor" class="form-control" placeholder="0,00" inputmode="decimal" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">COMPROVANTE (opcional)</label>
+        <input type="file" name="comprovante" class="form-control" accept="image/*,application/pdf">
+      </div>
+      <button type="submit" class="btn btn-success btn-full"><i class="fas fa-save"></i> Lançar</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- Lista de Despesas -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-list"></i> Despesas — {{ meses[mes-1] }}/{{ ano }}</div>
+
+    {% if despesas %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Descrição</th>
+            <th>Cat.</th>
+            <th style="text-align:right;">Valor</th>
+            {% if session.is_admin %}<th></th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in despesas %}
+          <tr>
+            <td>
+              {{ d.descricao }}
+              {% if d.comprovante %}
+                <br><a href="{{ url_for('static', filename='comprovantes/' + d.comprovante) }}" target="_blank" class="comp-link">
+                  <i class="fas fa-paperclip"></i> ver comprovante
+                </a>
+              {% endif %}
+            </td>
+            <td>
+              {% set cat_lower = d.categoria|lower %}
+              <span class="badge badge-{{ cat_lower }}">{{ d.categoria }}</span>
+            </td>
+            <td style="text-align:right;font-weight:700;color:#f87171;white-space:nowrap;">
+              R$ {{ "%.2f"|format(d.valor)|replace('.',',') }}
+            </td>
+            {% if session.is_admin %}
+            <td>
+              <form method="POST" action="{{ url_for('delete_despesa', id=d.id) }}" onsubmit="return confirm('Remover esta despesa?')">
+                <input type="hidden" name="mes" value="{{ mes }}">
+                <input type="hidden" name="ano" value="{{ ano }}">
+                <button class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+    <div style="display:flex;justify-content:space-between;font-weight:800;font-size:14px;padding:0 2px;">
+      <span>TOTAL</span>
+      <span style="color:#f87171;">R$ {{ "%.2f"|format(total)|replace('.',',') }}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;color:#94a3b8;padding:4px 2px 0;">
+      <span>÷ 10 casas =</span>
+      <span style="color:#34d399;font-weight:700;">R$ {{ "%.2f"|format(cota)|replace('.',',') }} por casa</span>
+    </div>
+
+    {% else %}
+    <div class="empty">
+      <i class="fas fa-receipt"></i>
+      Nenhuma despesa lançada para {{ meses[mes-1] }}/{{ ano }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Pagamentos -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-check-double"></i> Pagamentos — {{ meses[mes-1] }}/{{ ano }}</div>
+
+    {% if session.is_admin %}
+      {# ADMIN: vê todas as casas + progresso geral #}
+      {% set pagas = casas_pagas|length %}
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;margin-bottom:6px;">
+        <span>{{ pagas }}/10 pagaram</span>
+        <span style="color:#34d399;font-weight:700;">R$ {{ "%.2f"|format(pagas * cota)|replace('.',',') }} arrecadado</span>
+      </div>
+      <div class="progress" style="margin-bottom:14px;">
+        <div class="progress-bar" style="width:{{ pagas * 10 }}%;"></div>
+      </div>
+      <div class="casa-grid">
+        {% for u in usuarios %}
+          {% if u.casa != 'admin' %}
+          {% set pago = u.casa in casas_pagas %}
+          <div class="casa-item {{ 'pago' if pago else 'pendente' }}">
+            <form method="POST" action="{{ url_for('toggle_pagamento') }}">
+              <input type="hidden" name="casa" value="{{ u.casa }}">
+              <input type="hidden" name="mes" value="{{ mes }}">
+              <input type="hidden" name="ano" value="{{ ano }}">
+              <button class="casa-btn" title="{{ 'Marcar como pendente' if pago else 'Marcar como pago' }}">
+                <i class="fas fa-{{ 'check-circle' if pago else 'clock' }}"></i>
+                Casa {{ u.casa }}
+              </button>
+            </form>
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+    {% else %}
+      {# MORADOR: vê apenas a própria casa #}
+      {% set minha_casa = session.casa|string %}
+      {% set eu_paguei = minha_casa in casas_pagas %}
+      <div style="display:flex;align-items:center;gap:16px;padding:12px 4px;">
+        <div style="
+          width:64px;height:64px;border-radius:14px;
+          display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+          background:{{ 'rgba(16,185,129,.2)' if eu_paguei else 'rgba(239,68,68,.1)' }};
+          border:2px solid {{ '#10b981' if eu_paguei else '#ef444470' }};
+          color:{{ '#34d399' if eu_paguei else '#f87171' }};
+          font-weight:700;font-size:12px;
+        ">
+          <i class="fas fa-{{ 'check-circle' if eu_paguei else 'clock' }}" style="font-size:22px;"></i>
+          Casa {{ minha_casa }}
+        </div>
+        <div>
+          <div style="font-weight:800;font-size:16px;color:{{ '#34d399' if eu_paguei else '#f87171' }};">
+            {{ '✅ Pagamento confirmado' if eu_paguei else '⏳ Pagamento pendente' }}
+          </div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:4px;">
+            Valor: <strong style="color:#f1f5f9;">R$ {{ "%.2f"|format(cota)|replace('.',',') }}</strong>
+          </div>
+          {% if not eu_paguei and cota > 0 %}
+          <div style="font-size:11px;color:#475569;margin-top:4px;">
+            Qualquer dúvida, fale com a administradora.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
