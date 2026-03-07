@@ -17,14 +17,11 @@ MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
          'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 CATEGORIAS = ['Luz', 'Água', 'Limpeza', 'Outros']
 
-# 1. FUNÇÕES DE BANCO E UTILITÁRIOS
 def get_db():
     if DATABASE_URL:
-        # Conexão Render (PostgreSQL)
         conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         return conn, conn.cursor(cursor_factory=DictCursor)
     else:
-        # Conexão Local (SQLite)
         import sqlite3
         conn = sqlite3.connect('tamoios.db')
         conn.row_factory = sqlite3.Row
@@ -33,7 +30,7 @@ def get_db():
 def hash_senha(senha):
     return hashlib.sha256(senha.encode()).hexdigest()
 
-# 2. DECORADORES (ESSENCIAIS NO TOPO)
+# ─── DECORADORES ─────────────────────────────────────
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -53,12 +50,16 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# 3. FUNÇÃO DE INICIALIZAÇÃO AUTOMÁTICA
+# ─── AUTO-INIT (RESOLVE ERRO 500) ────────────────────
 def auto_init_db():
     if DATABASE_URL:
         try:
             conn, cur = get_db()
-            # cur.execute("DROP TABLE IF EXISTS usuarios CASCADE;") # DESCOMENTE SE O ERRO DE COLUNA PERSISTIR
+            # IMPORTANTE: Descomente as 3 linhas abaixo apenas uma vez se o erro de coluna persistir
+            # cur.execute("DROP TABLE IF EXISTS pagamentos CASCADE;")
+            # cur.execute("DROP TABLE IF EXISTS despesas CASCADE;")
+            # cur.execute("DROP TABLE IF EXISTS usuarios CASCADE;")
+            
             cur.execute('''
                 CREATE TABLE IF NOT EXISTS usuarios (
                     id SERIAL PRIMARY KEY,
@@ -84,20 +85,22 @@ def auto_init_db():
                     UNIQUE(casa, mes, ano)
                 );
             ''')
-            admin_senha = hash_senha('tamoios8')
+            # Garante usuário Admin (Ivonete)
+            admin_pwd = hash_senha('tamoios8')
             cur.execute("""
                 INSERT INTO usuarios (casa, nome, senha_hash, is_admin) 
                 VALUES (%s, %s, %s, %s) ON CONFLICT (casa) DO NOTHING
-            """, ('Casa 08', 'Ivonete - Casa 08', admin_senha, 1))
+            """, ('8', 'Ivonete - Casa 08', admin_pwd, 1))
+            
             conn.commit()
             conn.close()
-            print("✅ Banco sincronizado com sucesso!")
+            print("✅ Banco de dados sincronizado!")
         except Exception as e:
-            print(f"❌ Erro no Auto-Init: {e}")
+            print(f"❌ Erro Auto-Init: {e}")
 
 auto_init_db()
 
-# 4. ROTAS
+# ─── ROTAS ───────────────────────────────────────────
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'casa' in session: return redirect(url_for('index'))
@@ -126,15 +129,18 @@ def index():
     despesas = db.fetchall()
     db.execute('SELECT * FROM pagamentos WHERE mes=%s AND ano=%s', (mes, ano))
     pagamentos = db.fetchall()
-    db.execute('SELECT * FROM usuarios ORDER BY id ASC')
+    db.execute('SELECT * FROM usuarios WHERE casa != %s ORDER BY id ASC', ('admin',))
     usuarios = db.fetchall()
     conn.close()
 
     total = sum(d['valor'] for d in despesas)
     cota = round(total / 10, 2) if total > 0 else 0
     casas_pagas = {str(p['casa']) for p in pagamentos if p['pago']}
+    
+    anos_disp = list(range(2024, datetime.now().year + 2))
     return render_template('index.html', despesas=despesas, total=total, cota=cota, 
-                           mes=mes, ano=ano, meses=MESES, casas_pagas=casas_pagas, usuarios=usuarios)
+                           mes=mes, ano=ano, meses=MESES, anos=anos_disp,
+                           casas_pagas=casas_pagas, usuarios=usuarios, categorias=CATEGORIAS)
 
 @app.route('/logout')
 def logout():
