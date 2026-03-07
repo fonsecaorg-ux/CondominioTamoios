@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.secret_key = 'tamoios_secret_key_2026'
 
-# Configurações de Pasta e Banco
+# Configurações
 UPLOAD_FOLDER = 'static/comprovantes'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -30,38 +30,36 @@ def get_db():
 def hash_senha(senha):
     return hashlib.sha256(senha.encode()).hexdigest()
 
-# ─── DECORADORES ─────────────────────────────────────
+# Decoradores (precisam estar antes das rotas)
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if 'casa' not in session:
-            return redirect(url_for('login'))
+        if 'casa' not in session: return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated
 
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if 'casa' not in session:
-            return redirect(url_for('login'))
+        if 'casa' not in session: return redirect(url_for('login'))
         if not session.get('is_admin'):
             flash('Acesso restrito à administradora.', 'error')
             return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated
 
-# ─── AUTO-INIT (RESOLVE ERRO 500) ────────────────────
+# LIMPEZA E CRIAÇÃO DO BANCO (RESOLVE O ERRO 500)
 def auto_init_db():
     if DATABASE_URL:
         try:
             conn, cur = get_db()
-            # IMPORTANTE: Descomente as 3 linhas abaixo apenas uma vez se o erro de coluna persistir
-            # cur.execute("DROP TABLE IF EXISTS pagamentos CASCADE;")
-            # cur.execute("DROP TABLE IF EXISTS despesas CASCADE;")
-            # cur.execute("DROP TABLE IF EXISTS usuarios CASCADE;")
+            # Limpeza bruta para garantir que as colunas novas sejam criadas
+            cur.execute("DROP TABLE IF EXISTS pagamentos CASCADE;")
+            cur.execute("DROP TABLE IF EXISTS despesas CASCADE;")
+            cur.execute("DROP TABLE IF EXISTS usuarios CASCADE;")
             
             cur.execute('''
-                CREATE TABLE IF NOT EXISTS usuarios (
+                CREATE TABLE usuarios (
                     id SERIAL PRIMARY KEY,
                     casa TEXT UNIQUE NOT NULL,
                     nome TEXT NOT NULL,
@@ -69,13 +67,13 @@ def auto_init_db():
                     is_admin INTEGER DEFAULT 0,
                     ativo INTEGER DEFAULT 1
                 );
-                CREATE TABLE IF NOT EXISTS despesas (
+                CREATE TABLE despesas (
                     id SERIAL PRIMARY KEY,
                     mes INTEGER NOT NULL, ano INTEGER NOT NULL,
                     descricao TEXT NOT NULL, categoria TEXT NOT NULL,
                     valor NUMERIC NOT NULL, comprovante TEXT
                 );
-                CREATE TABLE IF NOT EXISTS pagamentos (
+                CREATE TABLE pagamentos (
                     id SERIAL PRIMARY KEY,
                     casa TEXT NOT NULL,
                     mes INTEGER NOT NULL,
@@ -85,22 +83,26 @@ def auto_init_db():
                     UNIQUE(casa, mes, ano)
                 );
             ''')
-            # Garante usuário Admin (Ivonete)
+            # Criar usuários iniciais (Ivonete + Casas)
             admin_pwd = hash_senha('tamoios8')
-            cur.execute("""
-                INSERT INTO usuarios (casa, nome, senha_hash, is_admin) 
-                VALUES (%s, %s, %s, %s) ON CONFLICT (casa) DO NOTHING
-            """, ('8', 'Ivonete - Casa 08', admin_pwd, 1))
+            cur.execute("INSERT INTO usuarios (casa, nome, senha_hash, is_admin) VALUES (%s,%s,%s,%s)", 
+                        ('8', 'Ivonete - Casa 08', admin_pwd, 1))
+            
+            # Criar moradores padrão
+            for i in range(1, 11):
+                if i != 8:
+                    pwd = hash_senha(f'casa{i}')
+                    cur.execute("INSERT INTO usuarios (casa, nome, senha_hash, is_admin) VALUES (%s,%s,%s,%s) ON CONFLICT DO NOTHING", 
+                                (str(i), f'Casa {i:02d}', pwd, 0))
             
             conn.commit()
             conn.close()
-            print("✅ Banco de dados sincronizado!")
+            print("✅ BANCO RESETADO E PRONTO!")
         except Exception as e:
-            print(f"❌ Erro Auto-Init: {e}")
+            print(f"❌ Erro Init: {e}")
 
 auto_init_db()
 
-# ─── ROTAS ───────────────────────────────────────────
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'casa' in session: return redirect(url_for('index'))
@@ -112,8 +114,7 @@ def login():
         user = db.fetchone()
         conn.close()
         if user and user['senha_hash'] == hash_senha(senha) and user['ativo']:
-            session['casa'] = user['casa']
-            session['is_admin'] = bool(user['is_admin'])
+            session['casa'] = user['casa']; session['is_admin'] = bool(user['is_admin'])
             session['nome'] = user['nome']
             return redirect(url_for('index'))
         flash('Casa ou senha incorretos.', 'error')
@@ -132,11 +133,9 @@ def index():
     db.execute('SELECT * FROM usuarios WHERE casa != %s ORDER BY id ASC', ('admin',))
     usuarios = db.fetchall()
     conn.close()
-
     total = sum(d['valor'] for d in despesas)
     cota = round(total / 10, 2) if total > 0 else 0
     casas_pagas = {str(p['casa']) for p in pagamentos if p['pago']}
-    
     anos_disp = list(range(2024, datetime.now().year + 2))
     return render_template('index.html', despesas=despesas, total=total, cota=cota, 
                            mes=mes, ano=ano, meses=MESES, anos=anos_disp,
