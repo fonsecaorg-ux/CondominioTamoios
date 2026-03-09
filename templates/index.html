@@ -30,7 +30,7 @@
     </div>
   </div>
 
-  <!-- Lançar Despesa (apenas Casa 8 - Ivonete - ou admin geral) -->
+  <!-- Lançar Despesa (apenas Ivonete ou admin) -->
   {% if pode_gerenciar %}
   <div class="card">
     <div class="card-title"><i class="fas fa-plus-circle"></i> Lançar Despesa</div>
@@ -135,7 +135,7 @@
     <div class="card-title"><i class="fas fa-check-double"></i> Pagamentos — {{ meses[mes-1] }}/{{ ano }}</div>
 
     {% if pode_gerenciar %}
-      {# Casa 8 (Ivonete) ou admin: vê todas as casas + progresso geral #}
+      {# Admin/Ivonete: vê todas as casas #}
       {% set pagas = casas_pagas|length %}
       <div style="display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;margin-bottom:6px;">
         <span>{{ pagas }}/10 pagaram</span>
@@ -155,7 +155,7 @@
               <input type="hidden" name="ano" value="{{ ano }}">
               <button class="casa-btn" title="{{ 'Marcar como pendente' if pago else 'Marcar como pago' }}">
                 <i class="fas fa-{{ 'check-circle' if pago else 'clock' }}"></i>
-                Casa {{ u.casa }}
+                {{ u.nome }}
               </button>
             </form>
           </div>
@@ -164,7 +164,7 @@
       </div>
 
     {% else %}
-      {# MORADOR: vê apenas a própria casa #}
+      {# MORADOR: vê apenas a própria situação #}
       {% set minha_casa = session.casa|string %}
       {% set eu_paguei = minha_casa in casas_pagas %}
       <div style="display:flex;align-items:center;gap:16px;padding:12px 4px;">
@@ -177,7 +177,7 @@
           font-weight:700;font-size:12px;
         ">
           <i class="fas fa-{{ 'check-circle' if eu_paguei else 'clock' }}" style="font-size:22px;"></i>
-        {{ u.nome }}
+          {{ session.nome }}
         </div>
         <div>
           <div style="font-weight:800;font-size:16px;color:{{ '#34d399' if eu_paguei else '#f87171' }};">
