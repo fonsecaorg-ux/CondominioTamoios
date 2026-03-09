@@ -42,19 +42,19 @@ def init_db():
     ''')
 
     # Criar usuários padrão (casa = número para login: 1, 2, ... 8, ... 10; admin = admin geral)
-    usuarios = [
-        ('01', 'casa1',       0),
-        ('02', 'casa2',       0),
-        ('03'  'casa3',       0),
-        ('04', 'casa4',       0),
-        ('05', 'casa5',       0),
-        ('06', 'tamoios6',    1),# Ivonete – única moradora que pode adicionar dados e uploads
-        ('07', 'casa7',       0),
-        ('08', 'casa8',        0)
-        ('09', 'casa9',       0),
-        ('Casa 10', 'casa10',      0),
-        ('admin', 'Administração',   'tamoios@dev', 1),  # Admin geral do aplicativo
-    ]
+  usuarios = [
+    ('Casa 01', 'Casa 01', 'casa1',       0),
+    ('Casa 02', 'Casa 02', 'casa2',       0),
+    ('Casa 03', 'Casa 03', 'casa3',       0),
+    ('Casa 04', 'Casa 04', 'casa4',       0),
+    ('Casa 05', 'Casa 05', 'casa5',       0),
+    ('Casa 06', 'Ivonete - Casa 06', 'tamoios6',    1),
+    ('Casa 07', 'Casa 07', 'casa7',       0),
+    ('Casa 08', 'Casa 08', 'casa8',       0),
+    ('Casa 09', 'Casa 09', 'casa9',       0),
+    ('Casa 10', 'Casa 10', 'casa10',      0),
+    ('admin',   'Administração', 'tamoios@dev', 1),
+]
 
     for casa, nome, senha, is_admin in usuarios:
         existing = c.execute('SELECT id FROM usuarios WHERE casa=?', (casa,)).fetchone()
