@@ -43,16 +43,17 @@ def init_db():
 
     # Criar usuários padrão (casa = número para login: 1, 2, ... 8, ... 10; admin = admin geral)
     usuarios = [
-        ('1',  'Casa 01',           'casa1',       0),
-        ('2',  'Casa 02',           'casa2',       0),
-        ('3',  'Casa 03',           'casa3',       0),
-        ('4',  'Casa 04',           'casa4',       0),
-        ('5',  'Casa 05',           'casa5',       0),
-        ('6',  'Casa 06',           'casa6',       0),
-        ('7',  'Casa 07',           'casa7',       0),
-        ('8',  'Ivonete - Casa 08', 'tamoios8',    1),  # Ivonete – única moradora que pode adicionar dados e uploads
-        ('9',  'Casa 09',           'casa9',       0),
-        ('10', 'Casa 10',           'casa10',      0),
+        ('Casa 01',  'Casa 01',           'casa1',       0),
+        ('Casa 02',  'Casa 02',           'casa2',       0),
+        ('Casa 03',  'Casa 03',           'casa3',       0),
+        ('Casa 04',  'Casa 04',           'casa4',       0),
+        ('Casa 05',  'Casa 05',           'casa5',       0),
+        ('Casa 06', Ivonete - Casa 06', 'tamoios6',    1),  # Ivonete – única moradora que pode adicionar dados e uploads
+        ('Casa 07',  'Casa 07',           'casa7',       0),
+        ('Casa 08',  'Casa 08',
+'casa8',        0)
+        ('Casa 09',  'Casa 09',           'casa9',       0),
+        ('Casa 10',  'Casa 10',           'casa10',      0),
         ('admin', 'Administração',   'tamoios@dev', 1),  # Admin geral do aplicativo
     ]
 
