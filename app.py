@@ -354,6 +354,15 @@ def dashboard():
                            total_ano=total_ano, media_mes=media_mes, mes_mais_caro=mes_mais_caro,
                            dados_mes=dados_mes, cat_ano=cat_ano, meses_ordem=meses_ordem)
 
+@app.route('/recreate-db-tamoios2026')
+def recreate_db():
+    if request.args.get('key') != 'tamoios@dev':
+        return 'Acesso negado', 403
+    # importa e roda o init
+    import init_db
+    init_db.init_db()
+    return 'Banco recriado com sucesso!'
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
