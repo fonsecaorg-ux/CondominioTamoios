@@ -110,6 +110,12 @@ def auto_init_db():
             )
         ''')
 
+        # Remove usuários com formato antigo (1, 2, 3... sem "Casa 0X")
+        formatos_antigos = [str(i) for i in range(1, 11)] + \
+                           [f'Casa {i}' for i in range(1, 11)]
+        for casa_antiga in formatos_antigos:
+            cur.execute("DELETE FROM usuarios WHERE casa = %s", (casa_antiga,))
+
         # Usuários padrão — só insere se não existirem
         usuarios = [
             ('Casa 01', 'Casa 01',           'casa1',       0),
